@@ -19,7 +19,10 @@ const int MOTOR_ENABLE_PIN = 8;
 // Constants
 const int CLOCK = 400000;
 //keymap for our physical keypad. Use in actual implementation
-char keymap[19] = "DCBA*9630852#741NF";
+// char keymap[19] = "DCBA*9630852#741NF";
+
+//keymap for the wokwi simulation
+char keymap[19] = "123A456B789C*0#DNF";
 
 // Mode definitions
 enum Mode {
@@ -52,8 +55,8 @@ void setup() {
   Serial.begin(115200);
   
   // I2C/Keypad Setup
-  Wire.setSDA(0);
-  Wire.setSCL(1);
+  Wire.setSDA(4);
+  Wire.setSCL(5);
   Wire.begin();
   Wire.setClock(CLOCK);
 
@@ -86,10 +89,13 @@ void setup() {
   displayMainMenu();
 }
 
+char lastkey = 0;
+
 void loop() {
   char key = readKeypad();
   
-  if (key != 0) {
+  // Only process if it is a valid key and not the same as the previous loop
+  if (key != 0 && key != 'N' && key != 'F' && key != lastkey) {
     Serial.print("Key pressed: ");
     Serial.println(key);
     
@@ -178,15 +184,19 @@ void loop() {
     }
   }
   
+  // Update the lastkey state AFTER processing the input
+  if (key == 'N' || key == 0) {
+    lastkey = 0;
+  } else if (key != 'F') {
+    lastkey = key;
+  }
+  
   delay(100);
 }
 
 char readKeypad() {
-  if (keypad.isPressed()) {
-    char ch = keypad.getChar();
-    return ch;
-  }
-  return 0;
+  keypad.getKey();         // 1. Forces a physical scan of the matrix over I2C
+  return keypad.getChar(); // 2. Translates the scanned hardware result using your keymap
 }
 
 void displayMainMenu() {
