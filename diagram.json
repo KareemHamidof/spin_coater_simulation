@@ -1,0 +1,38 @@
+{
+  "version": 1,
+  "author": "Anonymous maker",
+  "editor": "wokwi",
+  "parts": [
+    { "type": "wokwi-pi-pico", "id": "pico", "top": -3.15, "left": 3.6, "attrs": {} },
+    { "type": "wokwi-membrane-keypad", "id": "keypad1", "top": -107.6, "left": 380, "attrs": {} },
+    {
+      "type": "wokwi-lcd2004",
+      "id": "lcd1",
+      "top": -329.6,
+      "left": 130.4,
+      "attrs": { "pins": "i2c" }
+    },
+    { "type": "chip-pcf8574", "id": "keypad_i2c", "top": 87.42, "left": 187.2, "attrs": {} }
+  ],
+  "connections": [
+    [ "pico:GP0", "$serialMonitor:RX", "", [] ],
+    [ "pico:GP1", "$serialMonitor:TX", "", [] ],
+    [ "lcd1:SDA", "pico:GP0", "green", [ "h-134.4", "v288.2" ] ],
+    [ "lcd1:SCL", "pico:GP1", "green", [ "h0" ] ],
+    [ "keypad_i2c:SDA", "pico:GP0", "green", [ "h0" ] ],
+    [ "keypad_i2c:SCL", "pico:GP1", "green", [ "h0" ] ],
+    [ "keypad_i2c:P0", "keypad1:R1", "green", [ "h0" ] ],
+    [ "keypad_i2c:P1", "keypad1:R2", "green", [ "h0" ] ],
+    [ "keypad_i2c:P2", "keypad1:R3", "green", [ "h0" ] ],
+    [ "keypad_i2c:P3", "keypad1:R4", "green", [ "h0" ] ],
+    [ "keypad_i2c:P4", "keypad1:C1", "green", [ "v0" ] ],
+    [ "keypad_i2c:P5", "keypad1:C2", "green", [ "h0" ] ],
+    [ "keypad_i2c:P6", "keypad1:C3", "green", [ "h0" ] ],
+    [ "keypad_i2c:P7", "keypad1:C4", "green", [ "h0" ] ],
+    [ "pico:VBUS", "keypad_i2c:VCC", "green", [ "h0" ] ],
+    [ "pico:GND.8", "keypad_i2c:GND", "black", [ "h0" ] ],
+    [ "pico:3V3", "lcd1:VCC", "green", [ "h0" ] ],
+    [ "pico:GND.7", "lcd1:GND", "black", [ "h0" ] ]
+  ],
+  "dependencies": {}
+}
