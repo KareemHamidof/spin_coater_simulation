@@ -3,9 +3,9 @@
 #include "I2CKeyPad.h"
 #include <Wire.h>
 
-// Standard I2C LCD Configuration: Address 0x27, 16 columns, 2 rows
+// Standard I2C LCD Configuration: Address 0x27, 20 columns, 4 rows
 // Note: If your screen remains blank, change 0x27 to 0x3F.
-LiquidCrystal_I2C lcd(0x27, 16, 2); 
+LiquidCrystal_I2C lcd(0x27, 20, 4); 
 
 // I2C Keypad Configuration
 const uint8_t KEYPAD_ADDRESS = 0x20;
@@ -27,13 +27,18 @@ char keymap[19] = "123A456B789C*0#DNF";
 // Mode definitions
 enum Mode {
   MAIN_MENU,
-  RPM_MODE,
-  TIME_MODE,
   RUNNING
+};
+
+enum MenuLine {
+  RPM_LINE,
+  TIME_LINE,
+  START_LINE
 };
 
 // Global Variables
 Mode currentMode = MAIN_MENU;
+MenuLine selectedLine = RPM_LINE;
 uint16_t targetRPM = 0;
 uint16_t targetTime = 0;
 String rpmInput = "";
@@ -42,10 +47,6 @@ bool isRunning = false;
 
 // Function prototypes
 void displayMainMenu();
-void displayRPMMode();
-void displayTimeMode();
-void handleRPMInput(char key);
-void handleTimeInput(char key);
 void startSpinCycle();
 void stopMotor();
 char readKeypad();
@@ -63,9 +64,9 @@ void setup() {
   // LCD Setup for standard I2C backpack
   lcd.init();       // Initializes the I2C LCD (replaced lcd.begin)
   lcd.backlight();  // Turns on the LCD backlight (replaced lcd.setRGB)
-  lcd.print("Spin Coater");
-  lcd.setCursor(0, 1);
-  lcd.print("Ready");
+  lcd.print("--- SPIN COATER ----");
+  // lcd.setCursor(0, 1);
+  // lcd.print("RPM: ____");
   
   if (keypad.begin() == false) {
     lcd.clear();
@@ -84,7 +85,7 @@ void setup() {
   pinMode(MOTOR_ENABLE_PIN, OUTPUT);
   digitalWrite(MOTOR_ENABLE_PIN, LOW);
   
-  delay(2000);
+  delay(500);
   currentMode = MAIN_MENU;
   displayMainMenu();
 }
@@ -101,75 +102,49 @@ void loop() {
     
     switch (currentMode) {
       case MAIN_MENU:
-        if (key == 'A') {
-          currentMode = RPM_MODE;
-          rpmInput = "";
-          displayRPMMode();
-        } 
-        else if (key == 'B') {
-          currentMode = TIME_MODE;
-          timeInput = "";
-          displayTimeMode();
-        }
-        break;
-        
-      case RPM_MODE:
-        if (key == 'C') {
-          // Confirm RPM and go to Time Mode
-          if (rpmInput.length() > 0) {
-            targetRPM = atoi(rpmInput.c_str());
-            currentMode = TIME_MODE;
-            timeInput = "";
-            displayTimeMode();
-          }
-        } 
-        else if (key == '*') {
-          // Backspace
-          if (rpmInput.length() > 0) {
-            rpmInput.remove(rpmInput.length() - 1);
-            displayRPMMode();
-          }
-        } 
-        else if (key == '#') {
-          // Return to main menu
-          currentMode = MAIN_MENU;
-          displayMainMenu();
-        }
-        else if (isdigit(key)) {
-          // Add digit to RPM
-          if (rpmInput.length() < 4) {
+        if (isdigit(key)) {
+          if (selectedLine == RPM_LINE && rpmInput.length() < 4) {
             rpmInput += key;
-            displayRPMMode();
+          } else if (selectedLine == TIME_LINE && timeInput.length() < 4) {
+            timeInput += key;
           }
-        }
-        break;
-        
-      case TIME_MODE:
-        if (key == 'C') {
-          // Start spin cycle
-          if (timeInput.length() > 0) {
+          displayMainMenu();
+        } else if (key == '*') {
+          if (selectedLine == RPM_LINE && rpmInput.length() > 0) {
+            rpmInput.remove(rpmInput.length() - 1);
+          } else if (selectedLine == TIME_LINE && timeInput.length() > 0) {
+            timeInput.remove(timeInput.length() - 1);
+          }
+          displayMainMenu();
+        } else if (key == 'C') {
+          if (selectedLine == RPM_LINE) {
+            rpmInput = "";
+          } else if (selectedLine == TIME_LINE) {
+            timeInput = "";
+          }
+          displayMainMenu();
+        } else if (key == 'A') {
+          if (selectedLine == RPM_LINE && rpmInput.length() > 0) {
+            targetRPM = atoi(rpmInput.c_str());
+            selectedLine = TIME_LINE;
+            displayMainMenu();
+          } else if (selectedLine == TIME_LINE && timeInput.length() > 0) {
             targetTime = atoi(timeInput.c_str());
+            selectedLine = START_LINE;
+            displayMainMenu();
+          } else if (selectedLine == START_LINE) {
             startSpinCycle();
           }
-        } 
-        else if (key == '*') {
-          // Backspace
-          if (timeInput.length() > 0) {
-            timeInput.remove(timeInput.length() - 1);
-            displayTimeMode();
+        } else if (key == 'B') {
+          if (selectedLine == TIME_LINE) {
+            selectedLine = RPM_LINE;
+          } else if (selectedLine == START_LINE) {
+            selectedLine = TIME_LINE;
           }
-        } 
-        else if (key == '#') {
-          // Return to main menu
-          currentMode = MAIN_MENU;
           displayMainMenu();
-        }
-        else if (isdigit(key)) {
-          // Microwave-style input
-          if (timeInput.length() < 3) {
-            timeInput += key;
-            displayTimeMode();
-          }
+        } else if (key == '#') {
+          selectedLine = RPM_LINE;
+          displayMainMenu();
         }
         break;
         
@@ -200,34 +175,44 @@ char readKeypad() {
 }
 
 void displayMainMenu() {
-  lcd.clear();
-  lcd.print("A:RPM  B:Time");
-  lcd.setCursor(0, 1);
-  lcd.print("C:Start");
-}
+  String speedDisplay = rpmInput;
+  String timeDisplay = timeInput;
 
-void displayRPMMode() {
-  lcd.clear();
-  lcd.print("Enter RPM:");
-  lcd.setCursor(0, 1);
-  lcd.print(rpmInput);
-  if (rpmInput.length() == 0) {
-    lcd.print("____");
+  while (speedDisplay.length() < 4) {
+    speedDisplay += "_";
   }
-  lcd.print(" #Back");
-}
+  while (timeDisplay.length() < 4) {
+    timeDisplay += "_";
+  }
 
-void displayTimeMode() {
   lcd.clear();
-  lcd.print("Enter Time (s):");
+  lcd.print("--- SPIN COATER ----");
   lcd.setCursor(0, 1);
-  
-  String displayTime = timeInput;
-  while (displayTime.length() < 3) {
-    displayTime = "0" + displayTime;
+  lcd.print("Speed:      ");
+  lcd.print(speedDisplay);
+  lcd.print(" RPM");
+  lcd.setCursor(0, 2);
+  lcd.print("Time:       ");
+  lcd.print(timeDisplay);
+  lcd.print(" sec");
+  lcd.setCursor(0, 3);
+  lcd.print("  [ PRESS TO START ]");
+
+  lcd.noCursor();
+  lcd.noBlink();
+  if (selectedLine == RPM_LINE) {
+    lcd.setCursor(12 + rpmInput.length(), 1);
+    // lcd.cursor();
+    lcd.blink();
+  } else if (selectedLine == TIME_LINE) {
+    lcd.setCursor(12 + timeInput.length(), 2);
+    // lcd.cursor();
+    lcd.blink();
+  } else {
+    lcd.setCursor(2, 3);
+    // lcd.cursor();
+    lcd.blink();
   }
-  lcd.print(displayTime);
-  lcd.print(" #Back");
 }
 
 void startSpinCycle() {
@@ -236,7 +221,7 @@ void startSpinCycle() {
   if (targetRPM == 0 || targetTime == 0) {
     lcd.clear();
     lcd.print("Invalid input!");
-    delay(2000);
+    delay(1000);
     currentMode = MAIN_MENU;
     displayMainMenu();
     return;
@@ -309,6 +294,7 @@ void stopMotor() {
   targetTime = 0;
   rpmInput = "";
   timeInput = "";
+  selectedLine = RPM_LINE;
   
   displayMainMenu();
 }
