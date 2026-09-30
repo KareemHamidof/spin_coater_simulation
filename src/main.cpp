@@ -178,13 +178,29 @@ void displayMainMenu() {
   lcd.clear();
   lcd.print("SPIN COATER READY");
   lcd.setCursor(0, 1);
-  lcd.print(selectedLine == RPM_LINE ? ">RPM: " : " RPM: ");
+  lcd.print("RPM: ");
   lcd.print(rpmInput.length() > 0 ? rpmInput : "____");
   lcd.setCursor(0, 2);
-  lcd.print(selectedLine == TIME_LINE ? ">TIME(s): " : " TIME(s): ");
+  lcd.print("TIME(s): ");
   lcd.print(timeInput.length() > 0 ? timeInput : "____");
   lcd.setCursor(0, 3);
-  lcd.print(selectedLine == START_LINE ? ">START" : " START");
+  lcd.print("START");
+
+  lcd.noCursor();
+  lcd.noBlink();
+  if (selectedLine == RPM_LINE) {
+    lcd.setCursor(5 + rpmInput.length(), 1);
+    lcd.cursor();
+    lcd.blink();
+  } else if (selectedLine == TIME_LINE) {
+    lcd.setCursor(9 + timeInput.length(), 2);
+    lcd.cursor();
+    lcd.blink();
+  } else {
+    lcd.setCursor(0, 3);
+    lcd.cursor();
+    lcd.blink();
+  }
 }
 
 void startSpinCycle() {
