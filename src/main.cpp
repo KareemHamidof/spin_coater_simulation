@@ -175,29 +175,41 @@ char readKeypad() {
 }
 
 void displayMainMenu() {
+  String speedDisplay = rpmInput;
+  String timeDisplay = timeInput;
+
+  while (speedDisplay.length() < 4) {
+    speedDisplay += "_";
+  }
+  while (timeDisplay.length() < 4) {
+    timeDisplay += "_";
+  }
+
   lcd.clear();
-  lcd.print("SPIN COATER READY");
+  lcd.print(" SPIN COATER: READY ");
   lcd.setCursor(0, 1);
-  lcd.print("RPM: ");
-  lcd.print(rpmInput.length() > 0 ? rpmInput : "____");
+  lcd.print("Speed:    ");
+  lcd.print(speedDisplay);
+  lcd.print(" RPM");
   lcd.setCursor(0, 2);
-  lcd.print("TIME(s): ");
-  lcd.print(timeInput.length() > 0 ? timeInput : "____");
+  lcd.print("Time:       ");
+  lcd.print(timeDisplay);
+  lcd.print(" sec");
   lcd.setCursor(0, 3);
-  lcd.print("START");
+  lcd.print("  [ PRESS TO START ]");
 
   lcd.noCursor();
   lcd.noBlink();
   if (selectedLine == RPM_LINE) {
-    lcd.setCursor(5 + rpmInput.length(), 1);
+    lcd.setCursor(10 + rpmInput.length(), 1);
     lcd.cursor();
     lcd.blink();
   } else if (selectedLine == TIME_LINE) {
-    lcd.setCursor(9 + timeInput.length(), 2);
+    lcd.setCursor(12 + timeInput.length(), 2);
     lcd.cursor();
     lcd.blink();
   } else {
-    lcd.setCursor(0, 3);
+    lcd.setCursor(2, 3);
     lcd.cursor();
     lcd.blink();
   }
