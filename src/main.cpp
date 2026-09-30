@@ -65,8 +65,8 @@ void setup() {
   lcd.init();       // Initializes the I2C LCD (replaced lcd.begin)
   lcd.backlight();  // Turns on the LCD backlight (replaced lcd.setRGB)
   lcd.print("SPIN COATER READY");
-  lcd.setCursor(0, 1);
-  lcd.print("RPM: ____");
+  // lcd.setCursor(0, 1);
+  // lcd.print("RPM: ____");
   
   if (keypad.begin() == false) {
     lcd.clear();
@@ -85,7 +85,7 @@ void setup() {
   pinMode(MOTOR_ENABLE_PIN, OUTPUT);
   digitalWrite(MOTOR_ENABLE_PIN, LOW);
   
-  delay(2000);
+  delay(500);
   currentMode = MAIN_MENU;
   displayMainMenu();
 }
@@ -193,7 +193,7 @@ void startSpinCycle() {
   if (targetRPM == 0 || targetTime == 0) {
     lcd.clear();
     lcd.print("Invalid input!");
-    delay(2000);
+    delay(1000);
     currentMode = MAIN_MENU;
     displayMainMenu();
     return;
