@@ -64,7 +64,7 @@ void setup() {
   // LCD Setup for standard I2C backpack
   lcd.init();       // Initializes the I2C LCD (replaced lcd.begin)
   lcd.backlight();  // Turns on the LCD backlight (replaced lcd.setRGB)
-  lcd.print("SPIN COATER READY");
+  lcd.print("--- SPIN COATER ----");
   // lcd.setCursor(0, 1);
   // lcd.print("RPM: ____");
   
@@ -186,9 +186,9 @@ void displayMainMenu() {
   }
 
   lcd.clear();
-  lcd.print(" SPIN COATER: READY ");
+  lcd.print("--- SPIN COATER ----");
   lcd.setCursor(0, 1);
-  lcd.print("Speed:    ");
+  lcd.print("Speed:      ");
   lcd.print(speedDisplay);
   lcd.print(" RPM");
   lcd.setCursor(0, 2);
@@ -201,7 +201,7 @@ void displayMainMenu() {
   lcd.noCursor();
   lcd.noBlink();
   if (selectedLine == RPM_LINE) {
-    lcd.setCursor(10 + rpmInput.length(), 1);
+    lcd.setCursor(12 + rpmInput.length(), 1);
     lcd.cursor();
     lcd.blink();
   } else if (selectedLine == TIME_LINE) {
