@@ -105,7 +105,7 @@ void loop() {
         if (isdigit(key)) {
           if (selectedLine == RPM_LINE && rpmInput.length() < 4) {
             rpmInput += key;
-          } else if (selectedLine == TIME_LINE && timeInput.length() < 3) {
+          } else if (selectedLine == TIME_LINE && timeInput.length() < 4) {
             timeInput += key;
           }
           displayMainMenu();
@@ -202,15 +202,15 @@ void displayMainMenu() {
   lcd.noBlink();
   if (selectedLine == RPM_LINE) {
     lcd.setCursor(12 + rpmInput.length(), 1);
-    lcd.cursor();
+    // lcd.cursor();
     lcd.blink();
   } else if (selectedLine == TIME_LINE) {
     lcd.setCursor(12 + timeInput.length(), 2);
-    lcd.cursor();
+    // lcd.cursor();
     lcd.blink();
   } else {
     lcd.setCursor(2, 3);
-    lcd.cursor();
+    // lcd.cursor();
     lcd.blink();
   }
 }
