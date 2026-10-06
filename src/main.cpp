@@ -24,6 +24,81 @@ const int CLOCK = 400000;
 //keymap for the wokwi simulation
 char keymap[19] = "123A456B789C*0#DNF";
 
+
+/*
+//define custom inverted bitmaps for blinking "[start]"
+// Slot 0: Inverted '['
+const uint8_t invBracketOpen[8] = {
+  0b00011,
+  0b10111,
+  0b10111,
+  0b10111,
+  0b10111,
+  0b10111,
+  0b10111,
+  0b00000
+};
+
+// Slot 1: Inverted 'S'
+const uint8_t invS[8] = {
+  0b10001,
+  0b01111,
+  0b01111,
+  0b10001,
+  0b11110,
+  0b11110,
+  0b00001,
+  0b11111
+};
+
+// Slot 2: Inverted 'T'
+const uint8_t invT[8] = {
+  0b00000,
+  0b11011,
+  0b11011,
+  0b11011,
+  0b11011,
+  0b11011,
+  0b11011,
+  0b11111
+};
+
+// Slot 3: Inverted 'A'
+const uint8_t invA[8] = {
+  0b10001,
+  0b01110,
+  0b01110,
+  0b00000,
+  0b01110,
+  0b01110,
+  0b01110,
+  0b11111
+};
+
+// Slot 4: Inverted 'R'
+const uint8_t invR[8] = {
+  0b00001,
+  0b01110,
+  0b01110,
+  0b00001,
+  0b01011,
+  0b01101,
+  0b01110,
+  0b11111
+};
+
+// Slot 5: Inverted ']'
+const uint8_t invBracketClose[8] = {
+  0b10001,
+  0b11101,
+  0b11101,
+  0b11101,
+  0b11101,
+  0b11101,
+  0b11101,
+  0b10001
+};*/
+
 // Mode definitions
 enum Mode {
   MAIN_MENU,
@@ -44,9 +119,12 @@ uint16_t targetTime = 0;
 String rpmInput = "";
 String timeInput = "";
 bool isRunning = false;
+bool startArrowsVisible = false;
+unsigned long lastStartBlink = 0;
 
 // Function prototypes
 void displayMainMenu();
+void displayStartLine();
 void startSpinCycle();
 void stopMotor();
 char readKeypad();
@@ -64,6 +142,15 @@ void setup() {
   // LCD Setup for standard I2C backpack
   lcd.init();       // Initializes the I2C LCD (replaced lcd.begin)
   lcd.backlight();  // Turns on the LCD backlight (replaced lcd.setRGB)
+
+  // Load custom glyphs into CGRAM slots 0 to 5
+  /*lcd.createChar(0, (uint8_t*)invBracketOpen);
+  lcd.createChar(1, (uint8_t*)invS);
+  lcd.createChar(2, (uint8_t*)invT);
+  lcd.createChar(3, (uint8_t*)invA);
+  lcd.createChar(4, (uint8_t*)invR);
+  lcd.createChar(5, (uint8_t*)invBracketClose);*/
+  
   lcd.print("--- SPIN COATER ----");
   // lcd.setCursor(0, 1);
   // lcd.print("RPM: ____");
@@ -131,6 +218,8 @@ void loop() {
           } else if (selectedLine == TIME_LINE && timeInput.length() > 0) {
             targetTime = atoi(timeInput.c_str());
             selectedLine = START_LINE;
+            startArrowsVisible = false;
+            lastStartBlink = millis();
             displayMainMenu();
           } else if (selectedLine == START_LINE) {
             startSpinCycle();
@@ -140,10 +229,12 @@ void loop() {
             selectedLine = RPM_LINE;
           } else if (selectedLine == START_LINE) {
             selectedLine = TIME_LINE;
+            startArrowsVisible = false;
           }
           displayMainMenu();
         } else if (key == '#') {
           selectedLine = RPM_LINE;
+          startArrowsVisible = false;
           displayMainMenu();
         }
         break;
@@ -164,6 +255,13 @@ void loop() {
     lastkey = 0;
   } else if (key != 'F') {
     lastkey = key;
+  }
+
+  if (currentMode == MAIN_MENU && selectedLine == START_LINE &&
+      millis() - lastStartBlink >= 500) {
+    startArrowsVisible = !startArrowsVisible;
+    lastStartBlink = millis();
+    displayStartLine();
   }
   
   delay(100);
@@ -195,8 +293,7 @@ void displayMainMenu() {
   lcd.print("Time:       ");
   lcd.print(timeDisplay);
   lcd.print(" sec");
-  lcd.setCursor(0, 3);
-  lcd.print("  [ PRESS TO START ]");
+  displayStartLine();
 
   lcd.noCursor();
   lcd.noBlink();
@@ -209,9 +306,22 @@ void displayMainMenu() {
     // lcd.cursor();
     lcd.blink();
   } else {
-    lcd.setCursor(2, 3);
-    // lcd.cursor();
-    lcd.blink();
+    lcd.noCursor();
+    lcd.noBlink();
+  }
+}
+
+void displayStartLine() {
+  lcd.setCursor(0, 3);
+
+  if (selectedLine == START_LINE && startArrowsVisible) {
+    lcd.print("    >>[START]<<     ");
+  }
+  else if(selectedLine == START_LINE && !startArrowsVisible){
+    lcd.print("   >> [START] <<    ");
+  }
+   else {
+    lcd.print("      [START]       ");
   }
 }
 
@@ -295,6 +405,7 @@ void stopMotor() {
   rpmInput = "";
   timeInput = "";
   selectedLine = RPM_LINE;
+  startArrowsVisible = false;
   
   displayMainMenu();
 }
