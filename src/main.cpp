@@ -338,15 +338,30 @@ void startSpinCycle() {
   }
   
   unsigned long startTime = millis();
-  unsigned long duration = targetTime * 1000;
+  unsigned long duration = static_cast<unsigned long>(targetTime) * 1000UL;
   
   uint8_t pwmValue = map(targetRPM, 0, 20000, 0, 255);
   
   lcd.clear();
-  lcd.print("Spinning...");
+  String timeText = "[";
+  timeText += targetTime;
+  timeText += "s]";
+  lcd.print("SPINNING...");
+  lcd.print("         ");
+  lcd.setCursor(20 - timeText.length(), 0);
+  lcd.print(timeText);
   lcd.setCursor(0, 1);
-  lcd.print("RPM:");
-  lcd.print(targetRPM);
+  String targetText = String(targetRPM);
+  targetText += " RPM";
+  lcd.print("Target:");
+  // lcd.print("             ");
+  lcd.setCursor(20 - targetText.length(), 1);
+  lcd.print(targetText);
+  lcd.setCursor(0, 2);
+  lcd.print("Actual:");
+  // lcd.print("             ");
+  lcd.setCursor(15, 2);
+  lcd.print("0 RPM");
   
   // Enable motor
   digitalWrite(MOTOR_ENABLE_PIN, HIGH);
@@ -363,10 +378,38 @@ void startSpinCycle() {
   while (millis() - startTime < duration) {
     unsigned long elapsed = (millis() - startTime) / 1000;
     unsigned long remaining = targetTime - elapsed;
+    const uint8_t progressWidth = 18;
+    uint8_t progress = static_cast<uint8_t>(
+      ((millis() - startTime) * progressWidth) / duration
+    );
     
-    lcd.setCursor(9, 1);
-    lcd.print(remaining);
-    lcd.print("s  ");
+    timeText = "[";
+    timeText += remaining;
+    timeText += "s]";
+    lcd.setCursor(0, 0);
+    lcd.print("SPINNING...");
+    lcd.print("         ");
+    lcd.setCursor(20 - timeText.length(), 0);
+    lcd.print(timeText);
+
+    lcd.setCursor(0, 2);
+    lcd.print("Actual:");
+    // lcd.print("             ");
+    lcd.setCursor(15, 2);
+    lcd.print("0 RPM");
+
+    lcd.setCursor(0, 3);
+    lcd.print("[");
+    for (uint8_t i = 0; i < progressWidth; i++) {
+      if (i < progress) {
+        lcd.print("=");
+      } else if (i == progress && progress < progressWidth) {
+        lcd.print(">");
+      } else {
+        lcd.print(" ");
+      }
+    }
+    lcd.print("]");
     
     // Check for emergency stop
     if (keypad.isPressed()) {
